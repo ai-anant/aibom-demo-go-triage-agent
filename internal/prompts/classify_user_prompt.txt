@@ -1,0 +1,9 @@
+Classify this ticket.
+
+Customer tier: {{.tier}}
+Subject: {{.subject}}
+Body:
+{{.body}}
+
+Relevant policy notes:
+{{.context}}

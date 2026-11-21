@@ -1,0 +1,17 @@
+# Binaries
+bin/
+triage-agent
+
+# Local state
+.env
+*.log
+
+# AIBOM output
+aibom-report.*
+aibom.cdx.json
+*.aibom.json
+
+# Editors
+.vscode/
+.idea/
+.DS_Store

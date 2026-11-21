@@ -1,0 +1,6 @@
+Summarise this support ticket for the human review queue.
+
+Ticket: {{.ticket}}
+
+Return one paragraph: what the customer needs, which policy area applies, and
+the recommended next action. Do not include personal data.
