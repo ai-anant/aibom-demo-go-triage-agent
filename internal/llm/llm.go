@@ -27,6 +27,8 @@ func New(cfg config.Config) (Client, error) {
 		return NewOpenAI(cfg)
 	case "anthropic":
 		return NewAnthropic(cfg)
+	case "huggingface":
+		return NewHuggingFace(cfg)
 	case "ollama":
 		return NewOllama(cfg), nil
 	default:

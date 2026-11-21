@@ -10,6 +10,10 @@ Go counterpart to the Python `policy-assistant` sample and exists to show an
   `llama3.2` (local Ollama), `text-embedding-3-small`, `omni-moderation-latest`
 - **Frameworks:** OpenAI Go SDK (`sashabaranov/go-openai`),
   LangChainGo (`tmc/langchaingo`) for the escalation summary chain
+- **Hugging Face:** `meta-llama/Llama-3.1-8B-Instruct` for chat via the router
+  API, `sentence-transformers/all-MiniLM-L6-v2` for embeddings and
+  `facebook/bart-large-mnli` as a zero-shot urgency check, both through the
+  serverless inference API
 - **Offline by default:** `AI_PROVIDER=stub` returns deterministic
   rule-based classifications, so the demo and tests need no credentials.
 
@@ -68,7 +72,16 @@ go run ./cmd/triage-agent
 ollama pull llama3.2
 export AI_PROVIDER=ollama OLLAMA_MODEL=llama3.2
 go run ./cmd/triage-agent
+
+# Hugging Face router (OpenAI-compatible chat completions)
+export AI_PROVIDER=huggingface HF_TOKEN=hf_...
+go run ./cmd/triage-agent
 ```
+
+When `HF_TOKEN` is set, the service also enables a zero-shot urgency check with
+`facebook/bart-large-mnli`: an independent second opinion that forces
+escalation when the ticket looks urgent, even if the chat model disagrees. The
+model registry lives in `internal/config/catalog.go`.
 
 ## Endpoints
 
@@ -84,9 +97,10 @@ go run ./cmd/triage-agent
 
 ```
 cmd/triage-agent/        entrypoint and graceful shutdown
-internal/config/         settings + model catalog constants
-internal/llm/            Client interface, OpenAI, Anthropic, Ollama, stub,
-                         LangChain summarizer
+internal/config/         settings, model catalog and provider profiles
+internal/hf/             Hugging Face inference API client + urgency scorer
+internal/llm/            Client interface, OpenAI, Anthropic, Hugging Face,
+                         Ollama, stub, LangChain summarizer
 internal/kb/             embedded policy notes + TF-IDF retrieval
 internal/prompts/        embedded prompt templates
 internal/triage/         classification, validation, escalation, rules

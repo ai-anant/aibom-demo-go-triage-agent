@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ai-anant/aibom-demo-go-triage-agent/internal/config"
+	"github.com/ai-anant/aibom-demo-go-triage-agent/internal/hf"
 	"github.com/ai-anant/aibom-demo-go-triage-agent/internal/httpapi"
 	"github.com/ai-anant/aibom-demo-go-triage-agent/internal/kb"
 	"github.com/ai-anant/aibom-demo-go-triage-agent/internal/llm"
@@ -54,6 +55,12 @@ func main() {
 				slog.Warn("escalation summariser unavailable", "error", err)
 			}
 		}
+	}
+
+	if cfg.HFToken != "" {
+		scorer := hf.NewScorer(hf.New(cfg.HFToken, cfg.HFInferenceURL), cfg.HFZeroShotModel)
+		classifier.SetUrgencyScorer(scorer)
+		slog.Info("hugging face urgency scorer enabled", "model", cfg.HFZeroShotModel)
 	}
 
 	tickets := store.New()

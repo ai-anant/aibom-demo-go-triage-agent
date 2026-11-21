@@ -35,8 +35,9 @@ cisco-aibom analyze . -o html -O aibom-report.html --llm-model gpt-4o-mini
 
 | Asset type | Where it comes from |
 |---|---|
-| `model` | `internal/config/config.go` constants, `internal/llm/*.go` |
-| `llm_endpoint` | `internal/llm/openai.go`, `anthropic.go`, `ollama.go` |
+| `model` | `internal/config/catalog.go` registry, `internal/llm/*.go` |
+| `model` (Hugging Face) | `catalog.go` + `internal/hf/` — `Llama-3.1-8B-Instruct`, `all-MiniLM-L6-v2`, `bart-large-mnli` |
+| `llm_endpoint` | `internal/llm/openai.go`, `huggingface.go`, `anthropic.go`, `ollama.go` |
 | `embedding` | `text-embedding-3-small` in `internal/llm/openai.go` |
 | `prompt` | `internal/prompts/classify_system_prompt.txt`, `classify_user_prompt.txt`, `escalation_summary_prompt.txt` (surfaced by the agentic pass) |
 | `agent` | `internal/triage/triage.go` classification loop with tool-less completion (framework-level agent evidence comes from LangChainGo usage) |
@@ -46,22 +47,26 @@ cisco-aibom analyze . -o html -O aibom-report.html --llm-model gpt-4o-mini
 ## 4. Verified deterministic output
 
 Running only the deterministic stage (Cisco AIBOM 1.10.1, no LLM) on this
-repository reports **18 components**:
+repository reports **29 components**:
 
 * dependency entries for `github.com/sashabaranov/go-openai` and
   `github.com/tmc/langchaingo` (from `go.mod` and imports)
 * models `gpt-4o-mini`, `gpt-4o`, `claude-sonnet-4-5`, `llama3.2` resolved from
-  the configuration defaults
+  the model registry
+* Hugging Face models `meta-llama/Llama-3.1-8B-Instruct`,
+  `sentence-transformers/all-MiniLM-L6-v2`, `facebook/bart-large-mnli`
 * embedding `text-embedding-3-small`
 * `llm_endpoint` for the local Ollama base URL
-* secret references for `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`
+* secret references for `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and
+  `HUGGINGFACE_API_KEY`
 
 That is the expected shape for a Go target: dependency and literal detection
 plus env resolution, with prompts, agents and tools added by the agentic pass.
 
 ## 5. Demo narrative
 
-1. Show `internal/config/config.go` — the model catalog.
+1. Show `internal/config/catalog.go` — the model registry, including the three
+   Hugging Face models.
 2. Run the scan and open the report.
 3. Contrast with the Python sample: Go yields fewer Tier-1 findings because the
    AST analysis is shallower, which is a good teaching point about scanner
@@ -69,7 +74,8 @@ plus env resolution, with prompts, agents and tools added by the agentic pass.
 4. Show the prompt templates as first-class AI assets; they are embedded in the
    binary but still visible to source scanning.
 5. Show the LangChainGo dependency and the escalation chain as an example of
-   framework-level detection.
+   framework-level detection, and the HF zero-shot scorer as a second model
+   family in the same service.
 
 ## 6. Container variant
 

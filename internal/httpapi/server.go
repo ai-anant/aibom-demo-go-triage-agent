@@ -50,6 +50,13 @@ func (s *Server) index(w http.ResponseWriter, _ *http.Request) {
 		"escalation_model": s.cfg.EscalationModel,
 		"embedding_model":  s.cfg.EmbeddingModel,
 		"ollama_model":     s.cfg.OllamaModel,
+		"huggingface": map[string]string{
+			"chat":      s.cfg.HFChatModel,
+			"embedding": s.cfg.HFEmbeddingModel,
+			"zero_shot": s.cfg.HFZeroShotModel,
+		},
+		"hf_enabled":    s.cfg.HFToken != "",
+		"model_catalog": config.Profiles,
 	})
 }
 

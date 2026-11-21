@@ -36,15 +36,25 @@ type Ticket struct {
 
 // Result is the classification outcome returned to the caller.
 type Result struct {
-	Priority   string  `json:"priority"`
-	Queue      string  `json:"queue"`
-	Confidence float64 `json:"confidence"`
-	Rationale  string  `json:"rationale"`
-	Escalate   bool    `json:"escalate"`
-	Summary    string  `json:"summary,omitempty"`
-	Model      string  `json:"model"`
-	Fallback   bool    `json:"fallback"`
+	Priority     string  `json:"priority"`
+	Queue        string  `json:"queue"`
+	Confidence   float64 `json:"confidence"`
+	Rationale    string  `json:"rationale"`
+	Escalate     bool    `json:"escalate"`
+	Summary      string  `json:"summary,omitempty"`
+	Model        string  `json:"model"`
+	Fallback     bool    `json:"fallback"`
+	UrgencyScore float64 `json:"urgency_score,omitempty"`
 }
+
+// UrgencyScorer provides an independent urgency signal, used by the Hugging
+// Face zero-shot model as a second opinion on the chat model.
+type UrgencyScorer interface {
+	UrgencyScore(ctx context.Context, text string) (float64, error)
+}
+
+// urgencyThreshold is the score at which the second opinion forces escalation.
+const urgencyThreshold = 0.75
 
 // Classifier couples a chat model with the policy knowledge base.
 type Classifier struct {
@@ -54,6 +64,7 @@ type Classifier struct {
 	system      string
 	userTpl     *template.Template
 	summarizer  llm.Summarizer
+	urgency     UrgencyScorer
 	escalations int
 }
 
@@ -86,6 +97,9 @@ func NewClassifier(client llm.Client, base *kb.Base, topK int) (*Classifier, err
 // SetSummarizer attaches an optional escalation summariser.
 func (c *Classifier) SetSummarizer(s llm.Summarizer) { c.summarizer = s }
 
+// SetUrgencyScorer attaches the Hugging Face zero-shot second opinion.
+func (c *Classifier) SetUrgencyScorer(s UrgencyScorer) { c.urgency = s }
+
 // ModelName reports the model identifier backing the classifier.
 func (c *Classifier) ModelName() string { return c.client.Name() }
 
@@ -113,6 +127,17 @@ func (c *Classifier) Classify(ctx context.Context, ticket Ticket) Result {
 	}
 	if verdict.Queue == "security" {
 		verdict.Escalate = true
+	}
+	if c.urgency != nil {
+		score, err := c.urgency.UrgencyScore(
+			ctx, ticket.Subject+"\n"+ticket.Body,
+		)
+		if err != nil {
+			slog.Warn("hf urgency scorer failed", "error", err)
+		} else if score >= urgencyThreshold {
+			verdict.Escalate = true
+			verdict.UrgencyScore = score
+		}
 	}
 	if verdict.Escalate {
 		verdict.Summary = c.summarize(ctx, ticket)

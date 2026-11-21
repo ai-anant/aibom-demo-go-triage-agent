@@ -120,3 +120,45 @@ func TestLowConfidenceEscalates(t *testing.T) {
 		t.Fatal("low confidence should escalate")
 	}
 }
+
+type fakeScorer struct {
+	score float64
+	err   error
+}
+
+func (f fakeScorer) UrgencyScore(context.Context, string) (float64, error) {
+	return f.score, f.err
+}
+
+func TestUrgencyScorerForcesEscalation(t *testing.T) {
+	c := newClassifier(t, fakeClient{response: `{"priority":"normal","queue":"account","confidence":0.9}`})
+	c.SetUrgencyScorer(fakeScorer{score: 0.91})
+
+	got := c.Classify(context.Background(), Ticket{
+		Subject: "Password reset",
+		Body:    "Please reset my password.",
+		Tier:    "starter",
+	})
+
+	if !got.Escalate {
+		t.Fatal("high HF urgency score should escalate")
+	}
+	if got.UrgencyScore != 0.91 {
+		t.Fatalf("urgency score = %v", got.UrgencyScore)
+	}
+}
+
+func TestUrgencyScorerErrorKeepsVerdict(t *testing.T) {
+	c := newClassifier(t, fakeClient{response: `{"priority":"low","queue":"general","confidence":0.9}`})
+	c.SetUrgencyScorer(fakeScorer{err: errors.New("model loading")})
+
+	got := c.Classify(context.Background(), Ticket{
+		Subject: "Documentation link",
+		Body:    "Where is the API reference?",
+		Tier:    "starter",
+	})
+
+	if got.Escalate {
+		t.Fatal("scorer failure must not force escalation")
+	}
+}

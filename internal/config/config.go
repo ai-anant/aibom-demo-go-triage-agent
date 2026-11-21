@@ -10,14 +10,21 @@ import (
 	"strings"
 )
 
-// Model catalog used by this service.
-const (
-	OpenAIChatModel       = "gpt-4o-mini"
-	OpenAIEscalationModel = "gpt-4o"
-	AnthropicChatModel    = "claude-sonnet-4-5"
-	OllamaChatModel       = "llama3.2"
-	OpenAIEmbeddingModel  = "text-embedding-3-small"
-	ModerationModel       = "omni-moderation-latest"
+// Model catalog used by this service. Values come from the model registry in
+// catalog.go so there is a single source of truth.
+var (
+	OpenAIChatModel       = modelFor("openai-chat")
+	OpenAIEscalationModel = modelFor("openai-escalation")
+	AnthropicChatModel    = modelFor("anthropic-chat")
+	OllamaChatModel       = modelFor("ollama-chat")
+	OpenAIEmbeddingModel  = modelFor("openai-embedding")
+	ModerationModel       = modelFor("openai-moderation")
+
+	// Hugging Face models: chat via the router API, the rest via the
+	// serverless inference API.
+	HFChatModel      = modelFor("hf-chat")
+	HFEmbeddingModel = modelFor("hf-embedding")
+	HFZeroShotModel  = modelFor("hf-zero-shot")
 )
 
 // Config is the resolved configuration for one process.
@@ -33,6 +40,14 @@ type Config struct {
 	Temperature     float32
 	MaxTokens       int
 	TopK            int
+
+	// Hugging Face
+	HFToken          string
+	HFChatModel      string
+	HFEmbeddingModel string
+	HFZeroShotModel  string
+	HFChatBaseURL    string
+	HFInferenceURL   string
 }
 
 // FromEnv resolves configuration from environment variables.
@@ -61,6 +76,13 @@ func FromEnv() Config {
 		Temperature:     float32(envFloat("TEMPERATURE", 0.1)),
 		MaxTokens:       envInt("MAX_TOKENS", 700),
 		TopK:            envInt("TOP_K", 3),
+
+		HFToken:          env("HF_TOKEN", os.Getenv("HUGGINGFACE_API_KEY")),
+		HFChatModel:      env("HF_CHAT_MODEL", HFChatModel),
+		HFEmbeddingModel: env("HF_EMBEDDING_MODEL", HFEmbeddingModel),
+		HFZeroShotModel:  env("HF_ZERO_SHOT_MODEL", HFZeroShotModel),
+		HFChatBaseURL:    env("HF_CHAT_BASE_URL", "https://router.huggingface.co/v1"),
+		HFInferenceURL:   env("HF_INFERENCE_URL", "https://api-inference.huggingface.co/models"),
 	}
 }
 
