@@ -1,6 +1,6 @@
 # Binaries
 bin/
-triage-agent
+/triage-agent
 
 # Local state
 .env
