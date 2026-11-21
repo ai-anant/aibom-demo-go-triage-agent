@@ -46,8 +46,8 @@ cisco-aibom analyze . -o html -O aibom-report.html --llm-model gpt-4o-mini
 
 ## 4. Verified deterministic output
 
-Running only the deterministic stage (Cisco AIBOM 1.10.1, no LLM) on this
-repository reports **29 components**:
+Running only the deterministic stage (Cisco AIBOM 1.10.1, no LLM) on a fresh
+clone of this repository reports **33 components**:
 
 * dependency entries for `github.com/sashabaranov/go-openai` and
   `github.com/tmc/langchaingo` (from `go.mod` and imports)
