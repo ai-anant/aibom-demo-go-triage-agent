@@ -13,6 +13,9 @@ Go counterpart to the Python `policy-assistant` sample and exists to show an
 - **Offline by default:** `AI_PROVIDER=stub` returns deterministic
   rule-based classifications, so the demo and tests need no credentials.
 
+> Companion sample: [`aibom-demo-python-policy-assistant`](https://github.com/ai-anant/aibom-demo-python-policy-assistant) —
+> the same idea implemented in Python, useful for comparing per-language scan depth.
+
 ## Flow
 
 ```
